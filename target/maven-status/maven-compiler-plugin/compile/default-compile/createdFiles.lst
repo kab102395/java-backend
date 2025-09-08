@@ -1,0 +1,14 @@
+com\example\gamebackend\model\Progress.class
+com\example\gamebackend\Application.class
+com\example\gamebackend\dto\LoginResponse.class
+com\example\gamebackend\controller\ApiController.class
+com\example\gamebackend\model\Player.class
+com\example\gamebackend\Application$1.class
+com\example\gamebackend\WebSocketConfig.class
+com\example\gamebackend\GameWebSocketHandler.class
+com\example\gamebackend\NotificationService.class
+com\example\gamebackend\EventLog$Event.class
+com\example\gamebackend\EventLog.class
+com\example\gamebackend\AsyncConfig.class
+com\example\gamebackend\service\PlayerService.class
+com\example\gamebackend\dto\LoginRequest.class

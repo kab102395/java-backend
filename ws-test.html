@@ -1,0 +1,13 @@
+<!doctype html><meta charset="utf-8">
+<button id=o>Open</button> <button id=s>Send</button><pre id=log></pre>
+<script>
+const url="ws://localhost:8080/ws"; let ws;
+const log=(...a)=>logEl.textContent+=a.join(' ')+"\n"; const logEl=document.getElementById('log');
+o.onclick=()=>{ ws=new WebSocket(url);
+  ws.onopen =()=>log("open");
+  ws.onmessage=e=>log("msg",e.data);
+  ws.onclose =(e)=>log("close",e.code,e.reason||"");
+  ws.onerror =(e)=>log("error",e.message||e);
+};
+s.onclick=()=>ws?.send("hello");
+</script>
