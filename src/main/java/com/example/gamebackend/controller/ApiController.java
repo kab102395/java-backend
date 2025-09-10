@@ -7,6 +7,7 @@ import com.example.gamebackend.dto.LoginResponse;
 import com.example.gamebackend.model.Player;
 import com.example.gamebackend.model.Progress;
 import com.example.gamebackend.service.PlayerService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,18 +28,30 @@ public class ApiController {
         this.events = events;
     }
 
-    @GetMapping("/health")
+    @GetMapping(path = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
     public Map<String, String> health() {
         return Map.of("status", "ok");
     }
 
-    @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest req) {
-        return service.login(req);
+    @PostMapping(
+        path = "/login",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req) {
+        LoginResponse resp = service.login(req);
+        return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/progress/{playerId}")
-    public Player save(@PathVariable String playerId, @RequestBody Progress pr) {
+    @PostMapping(
+        path = "/progress/{playerId}",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Player> save(
+        @PathVariable String playerId,
+        @RequestBody Progress pr
+    ) {
         Player p = service.saveProgress(playerId, pr);
         // fire-and-forget WS + log for HTTP polling fallback
         notifier.broadcastRawAsync(Map.of(
@@ -47,26 +60,53 @@ public class ApiController {
             "level", p.level,
             "xp", p.xp
         ));
-        return p;
+        return ResponseEntity.ok(p);
     }
 
-    @PostMapping("/registerPush/{playerId}")
-    public Player register(@PathVariable String playerId, @RequestParam String token) {
-        return service.setFcmToken(playerId, token);
+    @PostMapping(
+        path = "/registerPush/{playerId}",
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Player> register(
+        @PathVariable String playerId,
+        @RequestParam String token
+    ) {
+        Player p = service.setFcmToken(playerId, token);
+        return ResponseEntity.ok(p);
     }
 
-    @PostMapping("/broadcast")
+    @PostMapping(
+        path = "/broadcast",
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
     public ResponseEntity<Void> broadcast(@RequestBody Map<String, Object> payload) {
         notifier.broadcastServerAsync(payload);   // async WS + log
         return ResponseEntity.accepted().build(); // 202
     }
 
     // HTTP polling fallback for clients where WS plugin is flaky
-    @GetMapping("/events/poll")
-    public Map<String, Object> poll(@RequestParam(name = "after", defaultValue = "0") long after) {
+    @GetMapping(path = "/events/poll", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> poll(
+        @RequestParam(name = "after", defaultValue = "0") long after
+    ) {
         return Map.of(
             "last", events.lastId(),
             "events", events.after(after)  // list of { id, data:{...} }
         );
+    }
+}
+
+/**
+ * Extra root-level health endpoint so devices can test `http://<ip>/health`
+ * even if they aren't calling `/api/health`. This is package-private (non-public)
+ * so it can live in the same source file as ApiController.
+ */
+@CrossOrigin(origins = "*") // dev-only; tighten later
+@RestController
+class HealthAliasController {
+
+    @GetMapping(path = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, String> rootHealth() {
+        return Map.of("status", "ok");
     }
 }
